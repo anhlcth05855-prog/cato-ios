@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import QuartzCore
 
 /// Quản lý vị trí GPS và tính toán tốc độ di chuyển thực tế từ chip định vị vệ tinh của iPhone
 public class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {

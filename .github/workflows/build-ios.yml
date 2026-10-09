@@ -33,7 +33,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            2>&1 | tee xcodebuild.log || (echo "=== BUILD LOG ERROR TAIL ===" && tail -n 100 xcodebuild.log && exit 1)
 
       - name: Package into .ipa
         run: |
@@ -51,3 +52,11 @@ jobs:
           name: Cato-iOS-IPA
           path: build/Cato.ipa
           retention-days: 14
+
+      - name: Upload Build Log if Failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xcode-Build-Log
+          path: xcodebuild.log
+          retention-days: 7

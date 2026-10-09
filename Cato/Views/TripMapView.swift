@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import UIKit
 
 /// Bản đồ Apple Maps hiển thị lộ trình và lịch sử đường đi vẽ bằng GPS Polyline
 public struct TripMapView: View {

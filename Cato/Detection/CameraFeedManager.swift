@@ -1,5 +1,6 @@
 import AVFoundation
 import UIKit
+import QuartzCore
 
 /// Quản lý luồng camera sau thời gian thực bằng AVFoundation
 public class CameraFeedManager: NSObject, ObservableObject, AVCaptureVideoDataOutputSampleBufferDelegate {

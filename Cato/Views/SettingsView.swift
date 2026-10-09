@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Màn hình Cài đặt thông số xe, camera và ngưỡng cảnh báo
 public struct SettingsView: View {

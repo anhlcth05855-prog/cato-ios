@@ -2,6 +2,7 @@ import Foundation
 import AudioToolbox
 import AVFoundation
 import UIKit
+import QuartzCore
 
 /// Quản lý âm thanh cảnh báo ADAS chuẩn: êm ái, rõ ràng, không gây chói tai hay khó chịu
 public class AlertSoundManager: ObservableObject {

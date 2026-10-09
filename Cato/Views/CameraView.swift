@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import UIKit
 
 /// Giao diện hiển thị luồng Camera thời gian thực và Bounding Box các xe nhận diện
 public struct CameraView: View {
