@@ -53,7 +53,7 @@ public struct DetectedVehicle: Identifiable, Equatable {
     public var distanceMeters: Float
     public var headwaySeconds: Float
     public var lanePosition: LanePosition
-    public var isLeadVehicle: BooleanLiteralType
+    public var isLeadVehicle: Bool
 
     public init(
         id: Int,

@@ -171,7 +171,9 @@ public struct SettingsView: View {
                     }
                     .listRowBackground(Color(red: 20/255, green: 24/255, blue: 33/255))
                 }
-                .scrollContentBackground(.hidden)
+                .onAppear {
+                    UITableView.appearance().backgroundColor = .clear
+                }
             }
             .navigationTitle("Cài đặt")
             .navigationBarTitleDisplayMode(.inline)
