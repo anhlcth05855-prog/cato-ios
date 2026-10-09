@@ -1,0 +1,49 @@
+name: Build Cato iOS (.ipa)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Cho phép bấm nút "Run workflow" thủ công trên web GitHub
+
+jobs:
+  build:
+    name: Build iOS App without Mac
+    runs-on: macos-14 # Chạy trên máy Mac của GitHub (Apple Silicon M2)
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Build iOS Archive (.xcarchive)
+        run: |
+          xcodebuild clean archive \
+            -project Cato.xcodeproj \
+            -scheme Cato \
+            -destination "generic/platform=iOS" \
+            -archivePath build/Cato.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Package into .ipa
+        run: |
+          mkdir -p build/Payload
+          cp -r build/Cato.xcarchive/Products/Applications/Cato.app build/Payload/
+          cd build
+          zip -r Cato.ipa Payload
+          ls -lh Cato.ipa
+
+      - name: Upload .ipa to GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cato-iOS-IPA
+          path: build/Cato.ipa
+          retention-days: 14
