@@ -10,12 +10,14 @@ public struct HUDOverlayView: View {
     let speedLimitKmh: Int?
     let nearbyCameraMeters: Int?
     let isMuted: Bool
+    let isSimulatingTouch: Bool
     let currentMode: ViewMode
 
     let onToggleMute: () -> Void
     let onOpenHistory: () -> Void
     let onOpenSettings: () -> Void
     let onSelectMode: (ViewMode) -> Void
+    let onQuickTestDistance: (Float?) -> Void
 
     public enum ViewMode: String, CaseIterable {
         case camera = "Camera"
@@ -166,26 +168,53 @@ public struct HUDOverlayView: View {
                                 .font(.system(size: 16, weight: .regular, design: .monospaced))
                                 .foregroundColor(Color(red: 154/255, green: 164/255, blue: 178/255))
                         }
+
+                        Text(assessment.alertLevel.titleVi)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(assessment.alertLevel == .safe ? .black : .white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(assessment.alertLevel.color)
+                            .cornerRadius(10)
                     } else {
                         HStack(spacing: 8) {
                             Circle()
                                 .fill(Color.green)
                                 .frame(width: 8, height: 8)
-                            Text("Làn trước trống")
-                                .font(.system(size: 16, weight: .semibold))
+                            Text("Đang quét làn đường...")
+                                .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.white)
                         }
                         .padding(.vertical, 8)
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
                 .background(Color(red: 10/255, green: 12/255, blue: 16/255).opacity(0.90))
                 .cornerRadius(18)
                 .overlay(
                     RoundedRectangle(cornerRadius: 18)
                         .stroke(assessment.alertLevel.color.opacity(0.6), lineWidth: 1.5)
                 )
+
+                // Thanh thử khoảng cách nhanh (28m / 62m / 85m / Live)
+                HStack(spacing: 6) {
+                    quickTestChip("28m", color: Color(red: 1.0, green: 0.23, blue: 0.19), dist: 28)
+                    quickTestChip("62m", color: Color(red: 245/255, green: 197/255, blue: 24/255), dist: 62)
+                    quickTestChip("85m", color: Color(red: 46/255, green: 204/255, blue: 113/255), dist: 85)
+                    if isSimulatingTouch {
+                        Button(action: { onQuickTestDistance(nil) }) {
+                            Text("Live AI")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.blue.opacity(0.75))
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+                .padding(.top, 6)
 
                 // Thanh chuyển đổi 3 chế độ xem (Camera, Sơ đồ, Tắt màn)
                 HStack(spacing: 8) {
@@ -208,6 +237,19 @@ public struct HUDOverlayView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 16)
             }
+        }
+    }
+
+    private func quickTestChip(_ label: String, color: Color, dist: Float) -> some View {
+        Button(action: { onQuickTestDistance(dist) }) {
+            Text(label)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(.white)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(color.opacity(0.28))
+                .cornerRadius(8)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(color.opacity(0.85), lineWidth: 1))
         }
     }
 

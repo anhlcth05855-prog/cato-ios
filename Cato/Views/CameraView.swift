@@ -7,6 +7,7 @@ public struct CameraView: View {
 
     let vehicles: [DetectedVehicle]
     let assessment: SafetyAssessment
+    var onTouchDistanceSelected: ((Float) -> Void)?
     @ObservedObject var cameraFeed = CameraFeedManager.shared
 
     public var body: some View {
@@ -34,6 +35,19 @@ public struct CameraView: View {
                     )
                 }
             }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let h = geo.size.height
+                        let horizonY = h * 0.35
+                        let bottomY = h * 0.85
+                        let clampedY = min(max(value.location.y, horizonY), bottomY)
+                        let factor = Float((bottomY - clampedY) / (bottomY - horizonY))
+                        let dist = 8.0 + (factor * factor * 112.0)
+                        onTouchDistanceSelected?(dist)
+                    }
+            )
         }
     }
 }
@@ -137,11 +151,19 @@ struct PerspectiveLaneOverlay: View {
     }
 }
 
-/// Vẽ Bounding Box và huy hiệu mét/giây lên từng xe
+/// Vẽ Bounding Box và huy hiệu loại xe / mét / giây lên từng xe
 struct VehicleBoundingBoxView: View {
     let vehicle: DetectedVehicle
     let screenSize: CGSize
     let alertColor: Color
+
+    private var vehicleTitle: String {
+        switch vehicle.label.lowercased() {
+        case "truck": return "TẢI"
+        case "bus": return "XE KHÁCH"
+        default: return "Ô TÔ"
+        }
+    }
 
     var body: some View {
         let box = vehicle.boundingBox
@@ -153,22 +175,34 @@ struct VehicleBoundingBoxView: View {
         )
 
         let isLead = vehicle.isLeadVehicle
-        let strokeColor = isLead ? alertColor : Color.white.opacity(0.4)
-        let strokeWidth: CGFloat = isLead ? 3.0 : 1.5
+        let strokeColor = isLead ? alertColor : Color.cyan.opacity(0.75)
+        let boxW = max(rect.width, 36)
+        let boxH = max(rect.height, 36)
 
         ZStack(alignment: .top) {
-            // Khung Bounding Box
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(strokeColor, lineWidth: strokeWidth)
-                .frame(width: max(rect.width, 30), height: max(rect.height, 30))
-                .shadow(color: isLead ? alertColor.opacity(0.4) : .clear, radius: 8)
-                .position(x: rect.midX, y: rect.midY)
+            if isLead {
+                // Khung ngắm 4 góc ADAS cho xe dẫn đầu
+                CornerBracketsShape(cornerLength: min(boxW, boxH) * 0.25)
+                    .stroke(strokeColor, style: StrokeStyle(lineWidth: 3.0, lineCap: .round))
+                    .frame(width: boxW, height: boxH)
+                    .shadow(color: alertColor.opacity(0.45), radius: 8)
+                    .position(x: rect.midX, y: rect.midY)
+            } else {
+                // Khung mảnh cho xe làn bên
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(strokeColor, lineWidth: 1.5)
+                    .frame(width: boxW, height: boxH)
+                    .position(x: rect.midX, y: rect.midY)
+            }
 
-            // Thẻ thông tin khoảng cách nổi phía trên nóc xe
+            // Thẻ thông tin loại xe + khoảng cách nổi phía trên nóc xe
             if vehicle.distanceMeters > 0 {
                 HStack(spacing: 4) {
-                    Text("\(Int(vehicle.distanceMeters))m")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    Text(vehicleTitle)
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(strokeColor)
+                    Text("· \(Int(vehicle.distanceMeters))m")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
                     if isLead && vehicle.headwaySeconds > 0 {
                         Text("· \(String(format: "%.1f", vehicle.headwaySeconds))s")
                             .font(.system(size: 11, weight: .medium, design: .monospaced))
@@ -177,11 +211,43 @@ struct VehicleBoundingBoxView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color(red: 22/255, green: 26/255, blue: 33/255).opacity(0.9))
+                .background(Color(red: 16/255, green: 20/255, blue: 28/255).opacity(0.9))
                 .cornerRadius(6)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(strokeColor, lineWidth: 1))
                 .position(x: rect.midX, y: max(rect.minY - 16, 20))
             }
         }
+    }
+}
+
+/// Hình 4 góc ngắm mục tiêu ADAS
+struct CornerBracketsShape: Shape {
+    let cornerLength: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let l = max(min(cornerLength, min(rect.width, rect.height) * 0.4), 8)
+
+        // Top-left
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY + l))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX + l, y: rect.minY))
+
+        // Top-right
+        path.move(to: CGPoint(x: rect.maxX - l, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + l))
+
+        // Bottom-right
+        path.move(to: CGPoint(x: rect.maxX, y: rect.maxY - l))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX - l, y: rect.maxY))
+
+        // Bottom-left
+        path.move(to: CGPoint(x: rect.minX + l, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - l))
+
+        return path
     }
 }

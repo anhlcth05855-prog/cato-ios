@@ -36,8 +36,15 @@ public struct MainView: View {
             // 1. Chế độ hiển thị chính
             switch currentMode {
             case .camera:
-                CameraView(vehicles: vehicles, assessment: assessment)
-                    .ignoresSafeArea()
+                CameraView(
+                    vehicles: vehicles,
+                    assessment: assessment,
+                    onTouchDistanceSelected: { dist in
+                        simulatedTouchDistance = dist
+                        updateInferenceLoop(overrideDistance: dist)
+                    }
+                )
+                .ignoresSafeArea()
 
             case .schematic:
                 SchematicView(
@@ -67,6 +74,7 @@ public struct MainView: View {
                     speedLimitKmh: speedLimitManager.currentSpeedLimitKmh,
                     nearbyCameraMeters: speedLimitManager.nearbySpeedCameraDistanceMeters,
                     isMuted: soundManager.isMuted,
+                    isSimulatingTouch: simulatedTouchDistance != nil,
                     currentMode: currentMode,
                     onToggleMute: {
                         soundManager.isMuted.toggle()
@@ -82,6 +90,14 @@ public struct MainView: View {
                             simulatedTouchDistance = nil
                         }
                         currentMode = mode
+                    },
+                    onQuickTestDistance: { dist in
+                        simulatedTouchDistance = dist
+                        if let dist = dist {
+                            updateInferenceLoop(overrideDistance: dist)
+                        } else {
+                            syncSimulationState()
+                        }
                     }
                 )
             }
