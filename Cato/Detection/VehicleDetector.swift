@@ -158,7 +158,7 @@ public class VehicleDetector: ObservableObject {
         var assigned: [DetectedVehicle] = []
         var usedIds = Set<Int>()
 
-        for var v in rawVehicles {
+        for v in rawVehicles {
             let center = CGPoint(x: v.boundingBox.midX, y: v.boundingBox.midY)
             var bestId: Int? = nil
             var bestDist: CGFloat = 0.15
@@ -172,15 +172,21 @@ public class VehicleDetector: ObservableObject {
                 }
             }
 
+            let assignedId: Int
             if let matchedId = bestId {
-                v.id = matchedId
-                usedIds.insert(matchedId)
+                assignedId = matchedId
             } else {
-                v.id = nextVehicleId
+                assignedId = nextVehicleId
                 nextVehicleId = (nextVehicleId >= 100000) ? 1 : (nextVehicleId + 1)
-                usedIds.insert(v.id)
             }
-            assigned.append(v)
+            usedIds.insert(assignedId)
+
+            assigned.append(DetectedVehicle(
+                id: assignedId,
+                label: v.label,
+                confidence: v.confidence,
+                boundingBox: v.boundingBox
+            ))
         }
 
         lastTrackedVehicles = assigned
