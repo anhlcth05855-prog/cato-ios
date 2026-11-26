@@ -7,6 +7,8 @@ public struct HUDOverlayView: View {
     let assessment: SafetyAssessment
     let vehicles: [DetectedVehicle]
     let currentSpeed: Float
+    let speedLimitKmh: Int?
+    let nearbyCameraMeters: Int?
     let isMuted: Bool
     let currentMode: ViewMode
 
@@ -33,17 +35,19 @@ public struct HUDOverlayView: View {
 
             VStack {
                 // Hàng trên cùng: Pills trạng thái & Nút điều khiển
-                HStack(spacing: 12) {
+                HStack(spacing: 8) {
                     // Pill ngưỡng khoảng cách
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Circle()
                             .fill(assessment.alertLevel.color)
                             .frame(width: 8, height: 8)
                         Text(assessment.thresholdDisplayText)
-                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
                             .foregroundColor(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                     }
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 10)
                     .padding(.vertical, 8)
                     .background(Color(red: 10/255, green: 12/255, blue: 16/255).opacity(0.85))
                     .cornerRadius(20)
@@ -52,25 +56,53 @@ public struct HUDOverlayView: View {
                             .stroke(Color.white.opacity(0.15), lineWidth: 1)
                     )
 
-                    Spacer()
+                    Spacer(minLength: 4)
 
-                    // Pill tốc độ GPS hiện tại
-                    HStack(spacing: 4) {
-                        Text("\(Int(currentSpeed))")
-                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                    // Pill tốc độ GPS hiện tại & Biển báo giới hạn tốc độ
+                    HStack(spacing: 6) {
+                        HStack(spacing: 4) {
+                            Text("\(Int(currentSpeed))")
+                                .font(.system(size: 17, weight: .bold, design: .monospaced))
+                                .foregroundColor((speedLimitKmh != nil && currentSpeed > Float(speedLimitKmh!)) ? Color(red: 1.0, green: 0.23, blue: 0.19) : .white)
+                            Text("km/h")
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundColor(Color(red: 154/255, green: 164/255, blue: 178/255))
+                        }
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color(red: 10/255, green: 12/255, blue: 16/255).opacity(0.85))
+                        .cornerRadius(20)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+
+                        if let limit = speedLimitKmh {
+                            Text("\(limit)")
+                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .foregroundColor(.black)
+                                .frame(width: 28, height: 28)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.red, lineWidth: 3.5))
+                        }
+
+                        if let camDist = nearbyCameraMeters {
+                            HStack(spacing: 3) {
+                                Image(systemName: "video.fill")
+                                    .font(.system(size: 10))
+                                Text("\(camDist)m")
+                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            }
                             .foregroundColor(.white)
-                        Text("km/h")
-                            .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundColor(Color(red: 154/255, green: 164/255, blue: 178/255))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color.red.opacity(0.85))
+                            .cornerRadius(12)
+                        }
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color(red: 10/255, green: 12/255, blue: 16/255).opacity(0.85))
-                    .cornerRadius(20)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                    )
 
                     // Nút Lịch sử lộ trình GPS
                     Button(action: onOpenHistory) {
@@ -127,9 +159,9 @@ public struct HUDOverlayView: View {
                             .frame(width: 1, height: 36)
 
                         HStack(alignment: .lastTextBaseline, spacing: 4) {
-                            Text(String(format: "%.1f", assessment.headwaySeconds))
+                            Text(assessment.headwaySeconds > 0 ? String(format: "%.1f", assessment.headwaySeconds) : "--")
                                 .font(.system(size: 24, weight: .semibold, design: .monospaced))
-                                .foregroundColor(.white)
+                                .foregroundColor(assessment.headwaySeconds > 0 ? .white : Color(red: 154/255, green: 164/255, blue: 178/255))
                             Text("s")
                                 .font(.system(size: 16, weight: .regular, design: .monospaced))
                                 .foregroundColor(Color(red: 154/255, green: 164/255, blue: 178/255))

@@ -92,7 +92,7 @@ public class SafetyThresholdManager: ObservableObject {
     public func evaluate(distanceMeters: Float, speedKmh: Float) -> SafetyAssessment {
         let effectiveThreshold = getEffectiveThreshold(speedKmh: speedKmh)
         let speedMps = max(speedKmh / 3.6, 0.1)
-        let headwaySeconds = distanceMeters / speedMps
+        let headwaySeconds = (speedKmh >= 5.0) ? (distanceMeters / speedMps) : 0
 
         let alertLevel: AlertLevel
         if distanceMeters <= 0 {

@@ -15,8 +15,8 @@ public struct SchematicView: View {
         GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
-            let horizonY = h * 0.22
-            let bottomY = h * 0.94
+            let horizonY = max(h * 0.16, 95)
+            let bottomY = max(min(h * 0.75, h - 185), horizonY + 120)
 
             ZStack {
                 // 1. Nền đen sâu OLED chống lóa
@@ -77,23 +77,25 @@ public struct SchematicView: View {
                     style: StrokeStyle(lineWidth: 3, dash: [20, 20], dashPhase: dashPhase)
                 )
 
-                // 3. Vạch ngưỡng luật quy định (Threshold Line)
-                let thresholdM = assessment.requiredThresholdMeters
-                let thresholdY = mapDistanceToY(dist: thresholdM, horizonY: horizonY, bottomY: bottomY)
+                // 3. Vạch ngưỡng luật quy định (chỉ vẽ khi tốc độ > 60 km/h để tránh đè lên xe & HUD dưới đáy)
+                if assessment.speedKmh > 60 {
+                    let thresholdM = assessment.requiredThresholdMeters
+                    let thresholdY = mapDistanceToY(dist: thresholdM, horizonY: horizonY, bottomY: bottomY)
 
-                Path { path in
-                    path.move(to: CGPoint(x: w * 0.16, y: thresholdY))
-                    path.addLine(to: CGPoint(x: w * 0.84, y: thresholdY))
+                    Path { path in
+                        path.move(to: CGPoint(x: w * 0.16, y: thresholdY))
+                        path.addLine(to: CGPoint(x: w * 0.84, y: thresholdY))
+                    }
+                    .stroke(
+                        assessment.alertLevel.color.opacity(0.45),
+                        style: StrokeStyle(lineWidth: 2, dash: [10, 10])
+                    )
+
+                    Text("Ngưỡng luật: \(Int(thresholdM))m")
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundColor(assessment.alertLevel.color.opacity(0.85))
+                        .position(x: w * 0.78, y: thresholdY - 12)
                 }
-                .stroke(
-                    assessment.alertLevel.color.opacity(0.45),
-                    style: StrokeStyle(lineWidth: 2, dash: [10, 10])
-                )
-
-                Text(assessment.speedKmh <= 60 ? "Chủ động giữ KC" : "Ngưỡng luật: \(Int(thresholdM))m")
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    .foregroundColor(assessment.alertLevel.color.opacity(0.8))
-                    .position(x: w * 0.80, y: thresholdY - 12)
 
                 // 4. Xe của mình (Ego Car) ở đáy làn giữa
                 let egoW: CGFloat = 52
@@ -143,8 +145,10 @@ public struct SchematicView: View {
                         HStack(spacing: 4) {
                             Text("\(Int(lead.distanceMeters))m")
                                 .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            Text("· \(String(format: "%.1f", lead.headwaySeconds))s")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            if lead.headwaySeconds > 0 {
+                                Text("· \(String(format: "%.1f", lead.headwaySeconds))s")
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            }
                         }
                         .foregroundColor(.white)
                         .padding(.horizontal, 10)
@@ -167,6 +171,16 @@ public struct SchematicView: View {
                     }
                     .position(x: w * 0.50, y: leadY)
                 }
+                // 7. Nút kiểm thử nhanh khoảng cách (28m / 62m / 85m)
+                VStack {
+                    HStack(spacing: 8) {
+                        quickTestButton(label: "28m", color: Color(red: 1.0, green: 0.23, blue: 0.19), dist: 28)
+                        quickTestButton(label: "62m", color: Color(red: 245/255, green: 197/255, blue: 24/255), dist: 62)
+                        quickTestButton(label: "85m", color: Color(red: 46/255, green: 204/255, blue: 113/255), dist: 85)
+                    }
+                    .padding(.top, max(horizonY - 34, 62))
+                    Spacer()
+                }
             }
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -182,6 +196,19 @@ public struct SchematicView: View {
             withAnimation(Animation.linear(duration: 0.8).repeatForever(autoreverses: false)) {
                 dashPhase = 40
             }
+        }
+    }
+
+    private func quickTestButton(label: String, color: Color, dist: Float) -> some View {
+        Button(action: { onTouchDistanceSelected?(dist) }) {
+            Text(label)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(color.opacity(0.25))
+                .cornerRadius(10)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(color.opacity(0.8), lineWidth: 1))
         }
     }
 

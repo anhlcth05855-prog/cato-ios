@@ -80,6 +80,7 @@ public class DistanceEstimator: ObservableObject {
         vehicles: [DetectedVehicle],
         currentSpeedKmh: Float
     ) -> [DetectedVehicle] {
+        let hasValidSpeed = currentSpeedKmh >= 5.0
         let speedMps = max(currentSpeedKmh / 3.6, 0.1)
         var updated = vehicles
 
@@ -107,7 +108,7 @@ public class DistanceEstimator: ObservableObject {
             distanceSmootherMap[v.id] = smoothDist
 
             v.distanceMeters = smoothDist
-            v.headwaySeconds = smoothDist / speedMps
+            v.headwaySeconds = hasValidSpeed ? (smoothDist / speedMps) : 0
             v.isLeadVehicle = false
             updated[i] = v
         }

@@ -56,7 +56,21 @@ struct CameraPreviewRepresentable: UIViewRepresentable {
 
     func updateUIView(_ uiView: UIView, context: Context) {
         DispatchQueue.main.async {
-            context.coordinator.previewLayer?.frame = uiView.bounds
+            guard let previewLayer = context.coordinator.previewLayer else { return }
+            previewLayer.frame = uiView.bounds
+            if let connection = previewLayer.connection, connection.isVideoOrientationSupported {
+                let orientation = uiView.window?.windowScene?.interfaceOrientation ?? .portrait
+                switch orientation {
+                case .landscapeLeft:
+                    connection.videoOrientation = .landscapeLeft
+                case .landscapeRight:
+                    connection.videoOrientation = .landscapeRight
+                case .portraitUpsideDown:
+                    connection.videoOrientation = .portraitUpsideDown
+                default:
+                    connection.videoOrientation = .portrait
+                }
+            }
         }
     }
 
@@ -85,16 +99,18 @@ struct SimulatedCameraBackground: View {
             )
 
             // Mặt đường nhựa cao tốc
-            Path { path in
-                let w = UIScreen.main.bounds.width
-                let h = UIScreen.main.bounds.height
-                path.move(to: CGPoint(x: w * 0.38, y: h * 0.40))
-                path.addLine(to: CGPoint(x: w * 0.62, y: h * 0.40))
-                path.addLine(to: CGPoint(x: w * 0.96, y: h))
-                path.addLine(to: CGPoint(x: w * 0.04, y: h))
-                path.closeSubpath()
+            GeometryReader { geo in
+                Path { path in
+                    let w = geo.size.width
+                    let h = geo.size.height
+                    path.move(to: CGPoint(x: w * 0.38, y: h * 0.40))
+                    path.addLine(to: CGPoint(x: w * 0.62, y: h * 0.40))
+                    path.addLine(to: CGPoint(x: w * 0.96, y: h))
+                    path.addLine(to: CGPoint(x: w * 0.04, y: h))
+                    path.closeSubpath()
+                }
+                .fill(Color(red: 20/255, green: 24/255, blue: 32/255))
             }
-            .fill(Color(red: 20/255, green: 24/255, blue: 32/255))
         }
     }
 }

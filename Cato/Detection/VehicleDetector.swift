@@ -2,7 +2,9 @@ import Foundation
 import CoreVideo
 import CoreGraphics
 import Vision
+import CoreML
 import UIKit
+import QuartzCore
 
 /// Nhận diện phương tiện giao thông trên khung hình camera bằng Apple Vision / CoreML
 /// Chạy 100% Offline trên vi xử lý Apple Neural Engine (ANE) / GPU
@@ -20,6 +22,23 @@ public class VehicleDetector: ObservableObject {
     private let processingQueue = DispatchQueue(label: "com.quangtam.cato.visionQueue", qos: .userInitiated)
     private var isProcessing = false
 
+    // Bộ đệm theo dõi đa khung hình (Multi-frame Tracking) & chống giật 450ms
+    private var lastTrackedVehicles: [DetectedVehicle] = []
+    private var lastDetectionTime: TimeInterval = 0
+    private let persistenceBufferSeconds: TimeInterval = 0.45
+
+    private lazy var coreMLModel: VNCoreMLModel? = {
+        let modelNames = ["yolov8n", "EfficientDet"]
+        for name in modelNames {
+            if let url = Bundle.main.url(forResource: name, withExtension: "mlmodelc"),
+               let mlModel = try? MLModel(contentsOf: url),
+               let vnModel = try? VNCoreMLModel(for: mlModel) {
+                return vnModel
+            }
+        }
+        return nil
+    }()
+
     public init() {}
 
     /// Nhận diện xe từ CVPixelBuffer từ camera sau
@@ -31,14 +50,52 @@ public class VehicleDetector: ObservableObject {
             guard let self = self else { return }
             defer { self.isProcessing = false }
 
-            let width = CVPixelBufferGetWidth(pixelBuffer)
-            let height = CVPixelBufferGetHeight(pixelBuffer)
+            if let vnModel = self.coreMLModel {
+                let request = VNCoreMLRequest(model: vnModel) { [weak self] req, error in
+                    guard let self = self else { return }
+                    if error == nil, let observations = req.results as? [VNRecognizedObjectObservation] {
+                        var rawVehicles: [DetectedVehicle] = []
+                        for obs in observations {
+                            guard let topLabel = obs.labels.first,
+                                  self.vehicleLabels.contains(topLabel.identifier.lowercased()),
+                                  topLabel.confidence >= self.scoreThreshold else { continue }
+                            let normBox = CGRect(
+                                x: obs.boundingBox.origin.x,
+                                y: 1.0 - obs.boundingBox.origin.y - obs.boundingBox.height,
+                                width: obs.boundingBox.width,
+                                height: obs.boundingBox.height
+                            )
+                            rawVehicles.append(DetectedVehicle(
+                                id: 0,
+                                label: topLabel.identifier.lowercased(),
+                                confidence: Float(topLabel.confidence),
+                                boundingBox: normBox
+                            ))
+                        }
+                        let tracked = self.applyTrackingAndPersistence(rawVehicles)
+                        DispatchQueue.main.async { completion(tracked) }
+                    } else {
+                        let fallback = self.applyTrackingAndPersistence([])
+                        DispatchQueue.main.async { completion(fallback) }
+                    }
+                }
+                request.imageCropAndScaleOption = .scaleFill
+                let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
+                do {
+                    try handler.perform([request])
+                } catch {
+                    let fallback = self.applyTrackingAndPersistence([])
+                    DispatchQueue.main.async { completion(fallback) }
+                }
+                return
+            }
 
-            // Sử dụng Vision Feature Print / Rectangle Detection kết hợp phối cảnh
+            // Fallback khi chưa nhúng file .mlmodelc: sử dụng Vision Rectangle Detection
             let request = VNDetectRectanglesRequest { [weak self] req, error in
                 guard let self = self, error == nil,
                       let observations = req.results as? [VNRectangleObservation] else {
-                    DispatchQueue.main.async { completion([]) }
+                    let fallback = self?.applyTrackingAndPersistence([]) ?? []
+                    DispatchQueue.main.async { completion(fallback) }
                     return
                 }
 
@@ -52,25 +109,22 @@ public class VehicleDetector: ObservableObject {
                         height: obs.boundingBox.height
                     )
 
-                    // Lọc kích thước hợp lý cho xe trên cao tốc
-                    // Xe trên đường nằm ở nửa dưới màn hình (y > 0.25) và có tỷ lệ chiều rộng/chiều cao phù hợp
                     let aspectRatio = normBox.width / max(normBox.height, 0.01)
                     if normBox.width > 0.06 && normBox.height > 0.04 &&
                         normBox.maxY > 0.35 && aspectRatio > 0.7 && aspectRatio < 2.8 {
                         let v = DetectedVehicle(
-                            id: self.nextVehicleId,
+                            id: 0,
                             label: "car",
                             confidence: Float(obs.confidence),
                             boundingBox: normBox
                         )
-                        self.nextVehicleId += 1
-                        if self.nextVehicleId > 100000 { self.nextVehicleId = 1 }
                         detected.append(v)
                     }
                 }
 
+                let tracked = self.applyTrackingAndPersistence(detected)
                 DispatchQueue.main.async {
-                    completion(detected)
+                    completion(tracked)
                 }
             }
 
@@ -83,9 +137,55 @@ public class VehicleDetector: ObservableObject {
             do {
                 try handler.perform([request])
             } catch {
-                DispatchQueue.main.async { completion([]) }
+                let fallback = self.applyTrackingAndPersistence([])
+                DispatchQueue.main.async { completion(fallback) }
             }
         }
+    }
+
+    /// Khớp ID xe qua các khung hình liên tiếp dựa trên khoảng cách tâm (< 0.15) và giữ đệm 450ms chống nhấp nháy
+    private func applyTrackingAndPersistence(_ rawVehicles: [DetectedVehicle]) -> [DetectedVehicle] {
+        let now = CACurrentMediaTime()
+
+        if rawVehicles.isEmpty {
+            if now - lastDetectionTime <= persistenceBufferSeconds && !lastTrackedVehicles.isEmpty {
+                return lastTrackedVehicles
+            }
+            lastTrackedVehicles = []
+            return []
+        }
+
+        var assigned: [DetectedVehicle] = []
+        var usedIds = Set<Int>()
+
+        for var v in rawVehicles {
+            let center = CGPoint(x: v.boundingBox.midX, y: v.boundingBox.midY)
+            var bestId: Int? = nil
+            var bestDist: CGFloat = 0.15
+
+            for prev in lastTrackedVehicles where !usedIds.contains(prev.id) {
+                let prevCenter = CGPoint(x: prev.boundingBox.midX, y: prev.boundingBox.midY)
+                let dist = hypot(center.x - prevCenter.x, center.y - prevCenter.y)
+                if dist < bestDist {
+                    bestDist = dist
+                    bestId = prev.id
+                }
+            }
+
+            if let matchedId = bestId {
+                v.id = matchedId
+                usedIds.insert(matchedId)
+            } else {
+                v.id = nextVehicleId
+                nextVehicleId = (nextVehicleId >= 100000) ? 1 : (nextVehicleId + 1)
+                usedIds.insert(v.id)
+            }
+            assigned.append(v)
+        }
+
+        lastTrackedVehicles = assigned
+        lastDetectionTime = now
+        return assigned
     }
 
     /// Tạo xe mô phỏng cho chế độ Demo / Test trên Xcode Simulator

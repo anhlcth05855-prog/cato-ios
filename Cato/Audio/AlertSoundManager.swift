@@ -121,3 +121,57 @@ public class AlertSoundManager: ObservableObject {
         stopAlert()
     }
 }
+
+/// Quản lý giọng nói cảnh báo thông minh Tiếng Việt (AVSpeechSynthesizer)
+public class VoiceAlertManager: ObservableObject {
+
+    public static let shared = VoiceAlertManager()
+
+    @Published public var isVoiceEnabled: Bool = true
+
+    private let synthesizer = AVSpeechSynthesizer()
+    private var lastDistanceVoiceTime: TimeInterval = 0
+    private var lastOverspeedVoiceTime: TimeInterval = 0
+    private var lastCameraVoiceTime: TimeInterval = 0
+
+    public init() {}
+
+    public func evaluateDistanceAlert(level: AlertLevel, speedKmh: Float, isMuted: Bool) {
+        guard isVoiceEnabled, !isMuted else { return }
+        guard level == .danger else { return }
+        if speedKmh <= 60 && level != .danger { return }
+
+        let now = CACurrentMediaTime()
+        guard now - lastDistanceVoiceTime > 8.0 else { return }
+        lastDistanceVoiceTime = now
+        speak("Chú ý giữ khoảng cách")
+    }
+
+    public func evaluateOverspeed(speedKmh: Float, limitKmh: Int?, isMuted: Bool) {
+        guard isVoiceEnabled, !isMuted, let limit = limitKmh else { return }
+        guard speedKmh > Float(limit) + 3.0 else { return }
+
+        let now = CACurrentMediaTime()
+        guard now - lastOverspeedVoiceTime > 12.0 else { return }
+        lastOverspeedVoiceTime = now
+        speak("Vượt quá tốc độ \(limit) ki lô mét giờ")
+    }
+
+    public func evaluateSpeedCamera(distanceMeters: Int?, isMuted: Bool) {
+        guard isVoiceEnabled, !isMuted, let dist = distanceMeters, dist <= 400 else { return }
+
+        let now = CACurrentMediaTime()
+        guard now - lastCameraVoiceTime > 25.0 else { return }
+        lastCameraVoiceTime = now
+        speak("Phía trước có camera phạt nguội")
+    }
+
+    private func speak(_ text: String) {
+        if synthesizer.isSpeaking { return }
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "vi-VN")
+        utterance.rate = 0.52
+        utterance.volume = 0.95
+        synthesizer.speak(utterance)
+    }
+}

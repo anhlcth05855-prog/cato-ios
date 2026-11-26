@@ -6,7 +6,9 @@ public struct MainView: View {
     @StateObject private var distanceEstimator = DistanceEstimator()
     @StateObject private var thresholdManager = SafetyThresholdManager()
     @StateObject private var soundManager = AlertSoundManager.shared
+    @StateObject private var voiceManager = VoiceAlertManager.shared
     @StateObject private var locationManager = LocationManager.shared
+    @StateObject private var speedLimitManager = RoadSpeedLimitManager.shared
     @StateObject private var tiltSensor = TiltSensorManager.shared
     @StateObject private var historyManager = TripHistoryManager.shared
     @StateObject private var cameraFeed = CameraFeedManager.shared
@@ -21,6 +23,7 @@ public struct MainView: View {
 
     // Mô phỏng khoảng cách khi chạm vào sơ đồ
     @State private var simulatedTouchDistance: Float? = nil
+    @State private var simulationTimer: Timer? = nil
 
     public init() {}
 
@@ -61,6 +64,8 @@ public struct MainView: View {
                     assessment: assessment,
                     vehicles: vehicles,
                     currentSpeed: locationManager.currentSpeedKmh,
+                    speedLimitKmh: speedLimitManager.currentSpeedLimitKmh,
+                    nearbyCameraMeters: speedLimitManager.nearbySpeedCameraDistanceMeters,
                     isMuted: soundManager.isMuted,
                     currentMode: currentMode,
                     onToggleMute: {
@@ -73,6 +78,9 @@ public struct MainView: View {
                         showingSettings = true
                     },
                     onSelectMode: { mode in
+                        if mode == .camera {
+                            simulatedTouchDistance = nil
+                        }
                         currentMode = mode
                     }
                 )
@@ -80,6 +88,15 @@ public struct MainView: View {
         }
         .onAppear {
             setupSystem()
+        }
+        .onChange(of: locationManager.isDemoMode) { _ in
+            syncSimulationState()
+        }
+        .onChange(of: cameraFeed.isAuthorized) { _ in
+            syncSimulationState()
+        }
+        .onChange(of: cameraFeed.isCameraAvailable) { _ in
+            syncSimulationState()
         }
         .sheet(isPresented: $showingHistory) {
             TripHistoryView()
@@ -108,7 +125,7 @@ public struct MainView: View {
             }
         }
 
-        // Liên kết vị trí GPS với quản lý lộ trình
+        // Liên kết vị trí GPS với quản lý lộ trình & giới hạn tốc độ
         locationManager.onLocationUpdated = { location, speed, roadName in
             self.historyManager.recordPoint(
                 lat: location.coordinate.latitude,
@@ -116,15 +133,26 @@ public struct MainView: View {
                 speedKmh: speed,
                 roadName: roadName
             )
+            self.speedLimitManager.update(location: location, isDemoMode: self.locationManager.isDemoMode)
+            self.voiceManager.evaluateOverspeed(
+                speedKmh: speed,
+                limitKmh: self.speedLimitManager.currentSpeedLimitKmh,
+                isMuted: self.soundManager.isMuted
+            )
+            self.voiceManager.evaluateSpeedCamera(
+                distanceMeters: self.speedLimitManager.nearbySpeedCameraDistanceMeters,
+                isMuted: self.soundManager.isMuted
+            )
             self.updateInferenceLoop()
         }
 
         // Liên kết luồng khung hình camera với AI nhận diện xe
         cameraFeed.onFrameCaptured = { pixelBuffer in
-            guard self.simulatedTouchDistance == nil else { return }
+            guard self.simulatedTouchDistance == nil, !self.locationManager.isDemoMode else { return }
 
             VehicleDetector.shared.detect(pixelBuffer: pixelBuffer) { detected in
                 DispatchQueue.main.async {
+                    guard self.simulatedTouchDistance == nil, !self.locationManager.isDemoMode else { return }
                     let processed = self.distanceEstimator.processVehicles(
                         vehicles: detected,
                         currentSpeedKmh: self.locationManager.currentSpeedKmh
@@ -135,9 +163,14 @@ public struct MainView: View {
             }
         }
 
-        // Nếu chạy trên Simulator hoặc chưa có xe thật, tạo xe mô phỏng ban đầu
-        if !cameraFeed.isCameraAvailable || !cameraFeed.isAuthorized {
-            Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+        syncSimulationState()
+    }
+
+    private func syncSimulationState() {
+        let shouldSimulate = locationManager.isDemoMode || !cameraFeed.isCameraAvailable
+        if shouldSimulate {
+            guard simulationTimer == nil else { return }
+            simulationTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
                 if self.simulatedTouchDistance == nil {
                     let simVehicles = VehicleDetector.shared.generateSimulatedVehicles(leadDistance: 48.0)
                     let processed = self.distanceEstimator.processVehicles(
@@ -147,6 +180,13 @@ public struct MainView: View {
                     self.vehicles = processed
                     self.evaluateSafety(processedVehicles: processed)
                 }
+            }
+        } else {
+            simulationTimer?.invalidate()
+            simulationTimer = nil
+            if simulatedTouchDistance == nil {
+                vehicles = []
+                evaluateSafety(processedVehicles: [])
             }
         }
     }
@@ -163,6 +203,7 @@ public struct MainView: View {
         let newAssessment = thresholdManager.evaluate(distanceMeters: dist, speedKmh: speed)
         self.assessment = newAssessment
         soundManager.updateAlertState(level: newAssessment.alertLevel)
+        voiceManager.evaluateDistanceAlert(level: newAssessment.alertLevel, speedKmh: speed, isMuted: soundManager.isMuted)
     }
 
     private func evaluateSafety(processedVehicles: [DetectedVehicle]) {
@@ -173,5 +214,6 @@ public struct MainView: View {
         let newAssessment = thresholdManager.evaluate(distanceMeters: dist, speedKmh: speed)
         self.assessment = newAssessment
         soundManager.updateAlertState(level: newAssessment.alertLevel)
+        voiceManager.evaluateDistanceAlert(level: newAssessment.alertLevel, speedKmh: speed, isMuted: soundManager.isMuted)
     }
 }

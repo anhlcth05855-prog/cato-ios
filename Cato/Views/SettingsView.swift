@@ -7,6 +7,7 @@ public struct SettingsView: View {
     @ObservedObject var distanceEstimator: DistanceEstimator
     @ObservedObject var thresholdManager: SafetyThresholdManager
     @ObservedObject var soundManager = AlertSoundManager.shared
+    @ObservedObject var voiceManager = VoiceAlertManager.shared
     @ObservedObject var locationManager = LocationManager.shared
 
     @Environment(\.presentationMode) var presentationMode
@@ -69,6 +70,9 @@ public struct SettingsView: View {
                     // PHẦN 3: ÂM THANH CẢNH BÁO ADAS
                     Section(header: Text("ÂM THANH CẢNH BÁO").foregroundColor(.gray)) {
                         Toggle("Tắt chuông cảnh báo", isOn: $soundManager.isMuted)
+                            .foregroundColor(.white)
+
+                        Toggle("Giọng nói cảnh báo Tiếng Việt", isOn: $voiceManager.isVoiceEnabled)
                             .foregroundColor(.white)
 
                         if !soundManager.isMuted {

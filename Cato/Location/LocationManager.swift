@@ -145,3 +145,76 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
         }
     }
 }
+
+/// Dữ liệu giới hạn tốc độ & camera phạt nguội Offline cho các tuyến đường huyết mạch Việt Nam
+public class RoadSpeedLimitManager: ObservableObject {
+
+    public static let shared = RoadSpeedLimitManager()
+
+    @Published public var currentSpeedLimitKmh: Int? = nil
+    @Published public var nearbySpeedCameraDistanceMeters: Int? = nil
+
+    private struct SpeedZone {
+        let name: String
+        let lat: Double
+        let lng: Double
+        let radiusMeters: Double
+        let limitKmh: Int
+    }
+
+    private struct SpeedCamera {
+        let name: String
+        let lat: Double
+        let lng: Double
+    }
+
+    private let zones: [SpeedZone] = [
+        SpeedZone(name: "Cao tốc Long Thành – Dầu Giây", lat: 10.812, lng: 106.885, radiusMeters: 18000, limitKmh: 120),
+        SpeedZone(name: "Cao tốc Hà Nội – Hải Phòng", lat: 20.950, lng: 106.150, radiusMeters: 45000, limitKmh: 120),
+        SpeedZone(name: "Cao tốc Pháp Vân – Cầu Giẽ", lat: 20.895, lng: 105.875, radiusMeters: 22000, limitKmh: 100),
+        SpeedZone(name: "Cao tốc Phan Thiết – Dầu Giây", lat: 10.910, lng: 107.650, radiusMeters: 40000, limitKmh: 120),
+        SpeedZone(name: "Vành đai 3 trên cao Hà Nội", lat: 20.985, lng: 105.805, radiusMeters: 12000, limitKmh: 80),
+        SpeedZone(name: "Đại lộ Võ Văn Kiệt TP.HCM", lat: 10.748, lng: 106.668, radiusMeters: 10000, limitKmh: 60)
+    ]
+
+    private let cameras: [SpeedCamera] = [
+        SpeedCamera(name: "Camera Cao tốc HN-HP Km12", lat: 20.978, lng: 105.751),
+        SpeedCamera(name: "Camera Cao tốc LT-DG", lat: 10.808, lng: 106.862),
+        SpeedCamera(name: "Camera Pháp Vân", lat: 20.922, lng: 105.852)
+    ]
+
+    public init() {}
+
+    public func update(location: CLLocation, isDemoMode: Bool) {
+        if isDemoMode {
+            currentSpeedLimitKmh = 120
+            nearbySpeedCameraDistanceMeters = nil
+            return
+        }
+
+        var matchedLimit: Int? = nil
+        for zone in zones {
+            let zoneLoc = CLLocation(latitude: zone.lat, longitude: zone.lng)
+            if location.distance(from: zoneLoc) <= zone.radiusMeters {
+                matchedLimit = zone.limitKmh
+                break
+            }
+        }
+
+        var nearestCamDist: Int? = nil
+        for cam in cameras {
+            let camLoc = CLLocation(latitude: cam.lat, longitude: cam.lng)
+            let dist = Int(location.distance(from: camLoc))
+            if dist <= 500 {
+                if nearestCamDist == nil || dist < nearestCamDist! {
+                    nearestCamDist = dist
+                }
+            }
+        }
+
+        DispatchQueue.main.async {
+            self.currentSpeedLimitKmh = matchedLimit
+            self.nearbySpeedCameraDistanceMeters = nearestCamDist
+        }
+    }
+}
