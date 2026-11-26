@@ -13,7 +13,7 @@ public class VehicleDetector: ObservableObject {
     public static let shared = VehicleDetector()
 
     /// Ngưỡng độ tin cậy tối thiểu
-    public var scoreThreshold: Float = 0.35
+    public var scoreThreshold: Float = 0.45
 
     /// Nhãn phương tiện cần theo dõi (ô tô con, xe tải, xe buýt)
     private let vehicleLabels: Set<String> = ["car", "truck", "bus", "automobile", "vehicle"]
@@ -28,7 +28,7 @@ public class VehicleDetector: ObservableObject {
     private let persistenceBufferSeconds: TimeInterval = 0.45
 
     private lazy var coreMLModel: VNCoreMLModel? = {
-        let modelNames = ["yolov8n", "EfficientDet"]
+        let modelNames = ["YOLOv3TinyInt8LUT", "YOLOv3Tiny", "yolov8n", "EfficientDet"]
         for name in modelNames {
             if let url = Bundle.main.url(forResource: name, withExtension: "mlmodelc"),
                let mlModel = try? MLModel(contentsOf: url),
@@ -80,7 +80,7 @@ public class VehicleDetector: ObservableObject {
                     }
                 }
                 request.imageCropAndScaleOption = .scaleFill
-                let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
+                let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])
                 do {
                     try handler.perform([request])
                 } catch {
@@ -90,55 +90,9 @@ public class VehicleDetector: ObservableObject {
                 return
             }
 
-            // Fallback khi chưa nhúng file .mlmodelc: sử dụng Vision Rectangle Detection
-            let request = VNDetectRectanglesRequest { [weak self] req, error in
-                guard let self = self, error == nil,
-                      let observations = req.results as? [VNRectangleObservation] else {
-                    let fallback = self?.applyTrackingAndPersistence([]) ?? []
-                    DispatchQueue.main.async { completion(fallback) }
-                    return
-                }
-
-                var detected: [DetectedVehicle] = []
-                for obs in observations {
-                    // Chuyển đổi tọa độ Vision (origin ở góc dưới bên trái, Y ngược) sang hệ tọa độ iOS UIKit (origin trên trái)
-                    let normBox = CGRect(
-                        x: obs.boundingBox.origin.x,
-                        y: 1.0 - obs.boundingBox.origin.y - obs.boundingBox.height,
-                        width: obs.boundingBox.width,
-                        height: obs.boundingBox.height
-                    )
-
-                    let aspectRatio = normBox.width / max(normBox.height, 0.01)
-                    if normBox.width > 0.06 && normBox.height > 0.04 &&
-                        normBox.maxY > 0.35 && aspectRatio > 0.7 && aspectRatio < 2.8 {
-                        let v = DetectedVehicle(
-                            id: 0,
-                            label: "car",
-                            confidence: Float(obs.confidence),
-                            boundingBox: normBox
-                        )
-                        detected.append(v)
-                    }
-                }
-
-                let tracked = self.applyTrackingAndPersistence(detected)
-                DispatchQueue.main.async {
-                    completion(tracked)
-                }
-            }
-
-            request.minimumAspectRatio = 0.5
-            request.maximumAspectRatio = 3.0
-            request.minimumSize = 0.05
-            request.maximumObservations = 8
-
-            let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
-            do {
-                try handler.perform([request])
-            } catch {
-                let fallback = self.applyTrackingAndPersistence([])
-                DispatchQueue.main.async { completion(fallback) }
+            // Nếu chưa có model CoreML trong bundle, không nhận diện bừa hình chữ nhật
+            DispatchQueue.main.async {
+                completion([])
             }
         }
     }
