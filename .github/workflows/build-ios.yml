@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Build iOS App without Mac
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout Code
@@ -18,7 +18,9 @@ jobs:
 
       - name: Select Xcode Version
         run: |
-          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          if [ -d "/Applications/Xcode_15.4.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          fi
           xcodebuild -version
           xcodebuild -list -project Cato.xcodeproj
 
