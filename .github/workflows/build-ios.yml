@@ -26,6 +26,7 @@ jobs:
 
       - name: Build iOS App (.app)
         run: |
+          set -eo pipefail
           xcodebuild clean build \
             -project Cato.xcodeproj \
             -scheme Cato \
@@ -40,10 +41,13 @@ jobs:
 
       - name: Package into .ipa
         run: |
+          set -e
           mkdir -p build/Payload
           APP_PATH=$(find build/DerivedData -name "Cato.app" -type d | head -n 1)
           echo "Found app at: $APP_PATH"
+          test -n "$APP_PATH"
           cp -R "$APP_PATH" build/Payload/
+          test -f "build/Payload/Cato.app/Cato"
           cd build
           zip -r Cato.ipa Payload
           ls -lh Cato.ipa
