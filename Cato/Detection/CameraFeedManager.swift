@@ -19,10 +19,55 @@ public class CameraFeedManager: NSObject, ObservableObject, AVCaptureVideoDataOu
 
     private var lastFrameTime: TimeInterval = 0
     private let targetFrameInterval: TimeInterval = 1.0 / 20.0 // 20 FPS tối ưu nhiệt độ và pin trên taplo
+    private var currentVideoOrientation: AVCaptureVideoOrientation = .portrait
 
     override public init() {
         super.init()
+        updateCurrentVideoOrientation()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleOrientationChange),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
         checkPermission()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func handleOrientationChange() {
+        updateCurrentVideoOrientation()
+    }
+
+    private func updateCurrentVideoOrientation() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let interfaceOrientation = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first?.interfaceOrientation ?? .portrait
+
+            let newOrientation: AVCaptureVideoOrientation
+            switch interfaceOrientation {
+            case .landscapeLeft:
+                newOrientation = .landscapeLeft
+            case .landscapeRight:
+                newOrientation = .landscapeRight
+            case .portraitUpsideDown:
+                newOrientation = .portraitUpsideDown
+            default:
+                newOrientation = .portrait
+            }
+
+            self.currentVideoOrientation = newOrientation
+            self.sessionQueue.async { [weak self] in
+                guard let self = self,
+                      let connection = self.videoDataOutput.connection(with: .video),
+                      connection.isVideoOrientationSupported else { return }
+                connection.videoOrientation = newOrientation
+            }
+        }
     }
 
     public func checkPermission() {
@@ -75,10 +120,10 @@ public class CameraFeedManager: NSObject, ObservableObject, AVCaptureVideoDataOu
                 self.captureSession.addOutput(self.videoDataOutput)
             }
 
-            // Đặt hướng camera
+            // Đặt hướng camera khớp với hướng màn hình hiện tại
             if let connection = self.videoDataOutput.connection(with: .video),
                connection.isVideoOrientationSupported {
-                connection.videoOrientation = .landscapeRight
+                connection.videoOrientation = self.currentVideoOrientation
             }
 
             self.captureSession.commitConfiguration()

@@ -13,7 +13,7 @@ public class VehicleDetector: ObservableObject {
     public static let shared = VehicleDetector()
 
     /// Ngưỡng độ tin cậy tối thiểu
-    public var scoreThreshold: Float = 0.45
+    public var scoreThreshold: Float = 0.25
 
     /// Nhãn phương tiện cần theo dõi (ô tô con, xe tải, xe buýt)
     private let vehicleLabels: Set<String> = ["car", "truck", "bus", "automobile", "vehicle"]
