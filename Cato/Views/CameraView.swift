@@ -35,19 +35,6 @@ public struct CameraView: View {
                     )
                 }
             }
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        let h = geo.size.height
-                        let horizonY = h * 0.35
-                        let bottomY = h * 0.85
-                        let clampedY = min(max(value.location.y, horizonY), bottomY)
-                        let factor = Float((bottomY - clampedY) / (bottomY - horizonY))
-                        let dist = 8.0 + (factor * factor * 112.0)
-                        onTouchDistanceSelected?(dist)
-                    }
-            )
         }
     }
 }
