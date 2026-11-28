@@ -144,7 +144,7 @@ public class VoiceAlertManager: ObservableObject {
         let now = CACurrentMediaTime()
         guard now - lastDistanceVoiceTime > 8.0 else { return }
         lastDistanceVoiceTime = now
-        speak("Chú ý giữ khoảng cách")
+        speak("Please keep a safe distance")
     }
 
     public func evaluateOverspeed(speedKmh: Float, limitKmh: Int?, isMuted: Bool) {
@@ -154,7 +154,7 @@ public class VoiceAlertManager: ObservableObject {
         let now = CACurrentMediaTime()
         guard now - lastOverspeedVoiceTime > 12.0 else { return }
         lastOverspeedVoiceTime = now
-        speak("Vượt quá tốc độ \(limit) ki lô mét giờ")
+        speak("Speed limit \(limit) kilometers per hour exceeded")
     }
 
     public func evaluateSpeedCamera(distanceMeters: Int?, isMuted: Bool) {
@@ -163,13 +163,13 @@ public class VoiceAlertManager: ObservableObject {
         let now = CACurrentMediaTime()
         guard now - lastCameraVoiceTime > 25.0 else { return }
         lastCameraVoiceTime = now
-        speak("Phía trước có camera phạt nguội")
+        speak("Speed camera ahead")
     }
 
     private func speak(_ text: String) {
         if synthesizer.isSpeaking { return }
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "vi-VN")
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
         utterance.rate = 0.52
         utterance.volume = 0.95
         synthesizer.speak(utterance)

@@ -12,8 +12,8 @@ public struct TripHistoryView: View {
     @State private var selectedTripForMap: TripRecord?
 
     public enum HistoryTab: String, CaseIterable {
-        case trips = "Chuyến đi"
-        case timeline = "Dòng thời gian"
+        case trips = "Trips"
+        case timeline = "Timeline"
     }
 
     public var body: some View {
@@ -35,10 +35,10 @@ public struct TripHistoryView: View {
 
                         // Bộ lọc ngày: Tất cả, Hôm nay, Hôm qua, 7 ngày
                         HStack(spacing: 8) {
-                            FilterChip(title: "Tất cả", isSelected: selectedFilter == "ALL") { selectedFilter = "ALL" }
-                            FilterChip(title: "Hôm nay", isSelected: selectedFilter == "TODAY") { selectedFilter = "TODAY" }
-                            FilterChip(title: "Hôm qua", isSelected: selectedFilter == "YESTERDAY") { selectedFilter = "YESTERDAY" }
-                            FilterChip(title: "7 ngày qua", isSelected: selectedFilter == "WEEK") { selectedFilter = "WEEK" }
+                            FilterChip(title: "All", isSelected: selectedFilter == "ALL") { selectedFilter = "ALL" }
+                            FilterChip(title: "Today", isSelected: selectedFilter == "TODAY") { selectedFilter = "TODAY" }
+                            FilterChip(title: "Yesterday", isSelected: selectedFilter == "YESTERDAY") { selectedFilter = "YESTERDAY" }
+                            FilterChip(title: "Last 7 Days", isSelected: selectedFilter == "WEEK") { selectedFilter = "WEEK" }
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -59,7 +59,7 @@ public struct TripHistoryView: View {
                     }
                 }
             }
-            .navigationTitle("Lịch sử hành trình")
+            .navigationTitle("Trip History")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -91,7 +91,7 @@ public struct TripHistoryView: View {
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(.white)
                             Spacer()
-                            Text(String(format: "%.1f km · %d chuyến", summary.totalDistanceKm, summary.trips.count))
+                            Text(String(format: "%.1f km · %d trips", summary.totalDistanceKm, summary.trips.count))
                                 .font(.system(size: 12, weight: .medium, design: .monospaced))
                                 .foregroundColor(Color(red: 46/255, green: 204/255, blue: 113/255))
                         }
@@ -218,7 +218,7 @@ struct TripCardView: View {
                     Spacer()
 
                     HStack(spacing: 4) {
-                        Text("Bản đồ")
+                        Text("Map")
                             .font(.system(size: 12, weight: .semibold))
                         Image(systemName: "chevron.right")
                             .font(.system(size: 10))
@@ -294,7 +294,7 @@ struct TimelineEventCardView: View {
                         .lineLimit(2)
 
                     HStack(spacing: 12) {
-                        Text("Thời gian: \(event.durationFormatted)")
+                        Text("Duration: \(event.durationFormatted)")
                             .font(.system(size: 11))
                             .foregroundColor(Color(red: 154/255, green: 164/255, blue: 178/255))
 
@@ -306,7 +306,7 @@ struct TimelineEventCardView: View {
 
                         if event.type == .driving && !event.points.isEmpty {
                             Spacer()
-                            Text("Xem bản đồ >")
+                            Text("View Map >")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(.white)
                         }
@@ -348,10 +348,10 @@ struct EmptyHistoryStateView: View {
             Image(systemName: "location.slash.fill")
                 .font(.system(size: 40))
                 .foregroundColor(.gray)
-            Text("Chưa có lộ trình nào được ghi nhận")
+            Text("No trips recorded yet")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white)
-            Text("Khi bạn lái xe, Cato sẽ tự động ghi vết GPS và vẽ bản đồ lộ trình tại đây.")
+            Text("When you drive, Cato automatically logs your GPS route and renders it on the map here.")
                 .font(.system(size: 12))
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)

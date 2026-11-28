@@ -13,7 +13,7 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
     @Published public var authorizationStatus: CLAuthorizationStatus = .notDetermined
     @Published public var currentSpeedKmh: Float = 0
     @Published public var lastLocation: CLLocation?
-    @Published public var currentRoadName: String = "Đang xác định vị trí"
+    @Published public var currentRoadName: String = "Locating..."
     @Published public var isDemoMode: Bool = false
     @Published public var simulatedSpeedKmh: Float = 82.0 // Mặc định ví dụ Cato trên cao tốc (82 km/h)
 
@@ -63,7 +63,7 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
                 timestamp: Date()
             )
             lastLocation = demoLocation
-            currentRoadName = "Cao tốc Hà Nội – Hải Phòng (Demo)"
+            currentRoadName = "Hanoi – Hai Phong Expressway (Demo)"
             onLocationUpdated?(demoLocation, simulatedSpeedKmh, currentRoadName)
         } else {
             start()
@@ -135,7 +135,7 @@ public class LocationManager: NSObject, ObservableObject, CLLocationManagerDeleg
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
             guard let self = self, error == nil, let placemark = placemarks?.first else { return }
 
-            let road = placemark.thoroughfare ?? placemark.name ?? placemark.subLocality ?? "Đường đang chạy"
+            let road = placemark.thoroughfare ?? placemark.name ?? placemark.subLocality ?? "Current Road"
             let locality = placemark.subAdministrativeArea ?? placemark.locality ?? ""
             let displayName = locality.isEmpty ? road : "\(road), \(locality)"
 

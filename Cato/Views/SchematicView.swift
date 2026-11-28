@@ -91,7 +91,7 @@ public struct SchematicView: View {
                         style: StrokeStyle(lineWidth: 2, dash: [10, 10])
                     )
 
-                    Text("Ngưỡng luật: \(Int(thresholdM))m")
+                    Text("Legal limit: \(Int(thresholdM))m")
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundColor(assessment.alertLevel.color.opacity(0.85))
                         .position(x: w * 0.78, y: thresholdY - 12)
@@ -109,7 +109,7 @@ public struct SchematicView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(Color.white.opacity(0.3), lineWidth: 1)
                         )
-                    Text("XE BẠN")
+                    Text("YOUR CAR")
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundColor(Color(red: 154/255, green: 164/255, blue: 178/255))
                 }

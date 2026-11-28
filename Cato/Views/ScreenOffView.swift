@@ -19,11 +19,11 @@ public struct ScreenOffView: View {
                     .fill(assessment.alertLevel.color.opacity(0.3))
                     .frame(width: 10, height: 10)
 
-                Text("Chế độ chỉ âm thanh đang bật")
+                Text("Audio-Only Mode Active")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color.white.opacity(0.2))
 
-                Text("Chạm 2 lần vào màn hình để bật sáng")
+                Text("Double-tap anywhere to wake screen")
                     .font(.system(size: 11, weight: .regular))
                     .foregroundColor(Color.white.opacity(0.15))
             }

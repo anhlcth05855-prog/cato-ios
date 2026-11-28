@@ -8,9 +8,9 @@ public enum AlertLevel: String, Codable, CaseIterable {
 
     public var titleVi: String {
         switch self {
-        case .safe: return "An toàn"
-        case .caution: return "Thận trọng"
-        case .danger: return "Quá gần"
+        case .safe: return "Safe"
+        case .caution: return "Caution"
+        case .danger: return "Too Close"
         }
     }
 
@@ -48,8 +48,8 @@ public struct SafetyAssessment: Equatable {
         currentDistanceMeters: Float = 0,
         requiredThresholdMeters: Float = 35,
         headwaySeconds: Float = 0,
-        legalBandText: String = "≤ 60 km/h (Chủ động giữ khoảng cách)",
-        thresholdDisplayText: String = "Chủ động giữ KC",
+        legalBandText: String = "≤ 60 km/h (Driver Discretion)",
+        thresholdDisplayText: String = "Driver Discretion",
         isUnderThreshold: Bool = false
     ) {
         self.alertLevel = alertLevel

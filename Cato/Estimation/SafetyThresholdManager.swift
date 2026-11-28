@@ -53,15 +53,15 @@ public class SafetyThresholdManager: ObservableObject {
     public func getThresholdDisplayText(speedKmh: Float) -> String {
         switch speedKmh {
         case ...60:
-            return "Chủ động giữ KC"
+            return "Driver Discretion"
         case 60.01...80:
-            return "Ngưỡng 35 m"
+            return "Limit 35 m"
         case 80.01...100:
-            return "Ngưỡng 55 m"
+            return "Limit 55 m"
         case 100.01...120:
-            return "Ngưỡng 70 m"
+            return "Limit 70 m"
         default:
-            return "Ngưỡng 100 m"
+            return "Limit 100 m"
         }
     }
 
@@ -76,15 +76,15 @@ public class SafetyThresholdManager: ObservableObject {
     public func getSpeedBandDescription(speedKmh: Float) -> String {
         switch speedKmh {
         case ...60:
-            return "≤ 60 km/h (Chủ động giữ khoảng cách)"
+            return "≤ 60 km/h (Driver Discretion)"
         case 60.01...80:
-            return "60 – 80 km/h (Ngưỡng 35 m)"
+            return "60 – 80 km/h (35 m min)"
         case 80.01...100:
-            return "80 – 100 km/h (Ngưỡng 55 m)"
+            return "80 – 100 km/h (55 m min)"
         case 100.01...120:
-            return "100 – 120 km/h (Ngưỡng 70 m)"
+            return "100 – 120 km/h (70 m min)"
         default:
-            return "> 120 km/h (Ngưỡng 100 m)"
+            return "> 120 km/h (100 m min)"
         }
     }
 

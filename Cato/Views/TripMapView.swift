@@ -24,7 +24,7 @@ public struct TripMapView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 16, weight: .bold))
-                        Text("Quay lại")
+                        Text("Back")
                             .font(.system(size: 15, weight: .semibold))
                     }
                     .foregroundColor(.white)
@@ -55,10 +55,10 @@ public struct TripMapView: View {
                 VStack(spacing: 12) {
                     // Hàng thống kê: Quãng đường, Thời gian, Tốc độ tối đa, Tốc độ trung bình
                     HStack(spacing: 16) {
-                        StatItem(title: "QUÃNG ĐƯỜNG", value: trip.distanceKmString, color: Color(red: 46/255, green: 204/255, blue: 113/255))
-                        StatItem(title: "THỜI GIAN", value: trip.durationFormatted, color: .white)
-                        StatItem(title: "TỐC ĐỘ MAX", value: "\(Int(trip.maxSpeedKmh)) km/h", color: Color(red: 245/255, green: 197/255, blue: 24/255))
-                        StatItem(title: "TB", value: "\(Int(trip.avgSpeedKmh)) km/h", color: Color(red: 154/255, green: 164/255, blue: 178/255))
+                        StatItem(title: "DISTANCE", value: trip.distanceKmString, color: Color(red: 46/255, green: 204/255, blue: 113/255))
+                        StatItem(title: "DURATION", value: trip.durationFormatted, color: .white)
+                        StatItem(title: "MAX SPEED", value: "\(Int(trip.maxSpeedKmh)) km/h", color: Color(red: 245/255, green: 197/255, blue: 24/255))
+                        StatItem(title: "AVG", value: "\(Int(trip.avgSpeedKmh)) km/h", color: Color(red: 154/255, green: 164/255, blue: 178/255))
                     }
 
                     Divider()
@@ -147,7 +147,7 @@ struct MapRouteRepresentable: UIViewRepresentable {
         if let first = trip.points.first {
             let startPin = MKPointAnnotation()
             startPin.coordinate = first.coordinate
-            startPin.title = "Khởi hành"
+            startPin.title = "Start"
             startPin.subtitle = trip.startAddress
             mapView.addAnnotation(startPin)
         }
@@ -156,7 +156,7 @@ struct MapRouteRepresentable: UIViewRepresentable {
         if let last = trip.points.last {
             let endPin = MKPointAnnotation()
             endPin.coordinate = last.coordinate
-            endPin.title = "Điểm đến"
+            endPin.title = "Destination"
             endPin.subtitle = trip.endAddress
             mapView.addAnnotation(endPin)
         }
@@ -193,7 +193,7 @@ struct MapRouteRepresentable: UIViewRepresentable {
                 view?.annotation = annotation
             }
 
-            if annotation.title == "Khởi hành" {
+            if annotation.title == "Start" {
                 view?.markerTintColor = UIColor(red: 46/255, green: 204/255, blue: 113/255, alpha: 1.0)
                 view?.glyphImage = UIImage(systemName: "flag.fill")
             } else {

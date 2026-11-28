@@ -15,7 +15,7 @@ public class TripHistoryManager: ObservableObject {
     // Chuyến đi đang được ghi nhận thời gian thực
     private var currentTripPoints: [GpsPoint] = []
     private var currentTripStartTime: Int64 = 0
-    private var currentTripRoadName: String = "Hành trình hiện tại"
+    private var currentTripRoadName: String = "Current Trip"
     private var currentTripDistanceMeters: Float = 0
     private var currentTripMaxSpeed: Float = 0
 
@@ -41,7 +41,7 @@ public class TripHistoryManager: ObservableObject {
     }
 
     /// Bắt đầu ghi một chuyến đi mới
-    public func startNewTrip(initialRoadName: String = "Hành trình di chuyển") {
+    public func startNewTrip(initialRoadName: String = "Driving Trip") {
         currentTripPoints.removeAll()
         currentTripStartTime = Int64(Date().timeIntervalSince1970 * 1000)
         currentTripRoadName = initialRoadName
@@ -58,7 +58,7 @@ public class TripHistoryManager: ObservableObject {
             if !isCurrentlyStopped {
                 isCurrentlyStopped = true
                 currentStopStartTime = now
-                currentStopLocationName = roadName.isEmpty ? "Vị trí dừng đỗ" : roadName
+                currentStopLocationName = roadName.isEmpty ? "Stop Location" : roadName
                 currentStopLat = lat
                 currentStopLng = lng
             }
@@ -94,7 +94,7 @@ public class TripHistoryManager: ObservableObject {
         }
 
         currentTripMaxSpeed = max(currentTripMaxSpeed, speedKmh)
-        if (currentTripRoadName.isEmpty || currentTripRoadName == "Hành trình hiện tại" || currentTripRoadName == "Hành trình di chuyển") && !roadName.isEmpty {
+        if (currentTripRoadName.isEmpty || currentTripRoadName == "Current Trip" || currentTripRoadName == "Driving Trip") && !roadName.isEmpty {
             currentTripRoadName = roadName
         }
 
@@ -125,8 +125,8 @@ public class TripHistoryManager: ObservableObject {
         let totalSpeed = currentTripPoints.reduce(0.0) { $0 + Float($1.speedKmh) }
         let avgSpeed = currentTripPoints.isEmpty ? 0 : totalSpeed / Float(currentTripPoints.count)
 
-        let startAddr = currentTripPoints.first?.roadName.isEmpty == false ? currentTripPoints.first!.roadName : "Điểm khởi hành"
-        let endAddr = currentTripPoints.last?.roadName.isEmpty == false ? currentTripPoints.last!.roadName : "Điểm đến"
+        let startAddr = currentTripPoints.first?.roadName.isEmpty == false ? currentTripPoints.first!.roadName : "Start Point"
+        let endAddr = currentTripPoints.last?.roadName.isEmpty == false ? currentTripPoints.last!.roadName : "Destination"
 
         let newTrip = TripRecord(
             id: "TRIP_\(now)",
@@ -184,7 +184,7 @@ public class TripHistoryManager: ObservableObject {
         } else {
             let newDay = TimelineDay(
                 dateString: dateStr,
-                displayDate: "Hôm nay (\(dateStr))",
+                displayDate: "Today (\(dateStr))",
                 totalDistanceKm: trip.totalDistanceMeters / 1000.0,
                 totalDrivingMinutes: trip.durationMinutes,
                 totalParkingMinutes: 0,
@@ -219,7 +219,7 @@ public class TripHistoryManager: ObservableObject {
         } else {
             let newDay = TimelineDay(
                 dateString: todayStr,
-                displayDate: "Hôm nay (\(todayStr))",
+                displayDate: "Today (\(todayStr))",
                 totalDistanceKm: 0,
                 totalDrivingMinutes: 0,
                 totalParkingMinutes: duration,
@@ -243,11 +243,11 @@ public class TripHistoryManager: ObservableObject {
         for (dateStr, dayTrips) in grouped {
             let displayDate: String
             if dateStr == todayStr {
-                displayDate = "Hôm nay (\(dateStr))"
+                displayDate = "Today (\(dateStr))"
             } else if dateStr == yesterdayStr {
-                displayDate = "Hôm qua (\(dateStr))"
+                displayDate = "Yesterday (\(dateStr))"
             } else {
-                displayDate = "Ngày \(dateStr)"
+                displayDate = dateStr
             }
 
             let totalDistM = dayTrips.reduce(0.0) { $0 + $1.totalDistanceMeters }
@@ -501,7 +501,7 @@ public class TripHistoryManager: ObservableObject {
 
         let todayTimeline = TimelineDay(
             dateString: todayStr,
-            displayDate: "Hôm nay (\(todayStr))",
+            displayDate: "Today (\(todayStr))",
             totalDistanceKm: 176.5,
             totalDrivingMinutes: 270,
             totalParkingMinutes: 360,

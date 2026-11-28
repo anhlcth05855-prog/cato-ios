@@ -146,9 +146,9 @@ struct VehicleBoundingBoxView: View {
 
     private var vehicleTitle: String {
         switch vehicle.label.lowercased() {
-        case "truck": return "TẢI"
-        case "bus": return "XE KHÁCH"
-        default: return "Ô TÔ"
+        case "truck": return "TRUCK"
+        case "bus": return "BUS"
+        default: return "CAR"
         }
     }
 

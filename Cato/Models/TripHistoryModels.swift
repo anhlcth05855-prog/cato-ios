@@ -36,8 +36,8 @@ public enum TimelineEventType: String, Codable, CaseIterable {
 
     public var titleVi: String {
         switch self {
-        case .stop: return "Dừng đỗ xe"
-        case .driving: return "Đang di chuyển"
+        case .stop: return "Parked / Stopped"
+        case .driving: return "Driving"
         }
     }
 
@@ -97,11 +97,11 @@ public struct TimelineEvent: Identifiable, Codable, Equatable {
         let h = mins / 60
         let m = mins % 60
         if h > 0 && m > 0 {
-            return "\(h) tiếng \(m) phút"
+            return "\(h)h \(m)m"
         } else if h > 0 {
-            return "\(h) tiếng"
+            return "\(h)h"
         } else {
-            return "\(mins) phút"
+            return "\(mins) min"
         }
     }
 
@@ -169,11 +169,11 @@ public struct TripRecord: Identifiable, Codable, Equatable {
         let h = mins / 60
         let m = mins % 60
         if h > 0 && m > 0 {
-            return "\(h) tiếng \(m) phút"
+            return "\(h)h \(m)m"
         } else if h > 0 {
-            return "\(h) tiếng"
+            return "\(h)h"
         } else {
-            return "\(mins) phút"
+            return "\(mins) min"
         }
     }
 
@@ -225,15 +225,15 @@ public struct TimelineDay: Identifiable, Codable, Equatable {
     public var totalDrivingFormatted: String {
         let h = totalDrivingMinutes / 60
         let m = totalDrivingMinutes % 60
-        if h > 0 { return "\(h)h \(m)p" }
-        return "\(m) phút"
+        if h > 0 { return "\(h)h \(m)m" }
+        return "\(m) min"
     }
 
     public var totalParkingFormatted: String {
         let h = totalParkingMinutes / 60
         let m = totalParkingMinutes % 60
-        if h > 0 { return "\(h)h \(m)p" }
-        return "\(m) phút"
+        if h > 0 { return "\(h)h \(m)m" }
+        return "\(m) min"
     }
 
     public init(

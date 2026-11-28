@@ -9,9 +9,9 @@ public enum LanePosition: String, Codable, CaseIterable {
 
     public var titleVi: String {
         switch self {
-        case .currentLane: return "Cùng làn"
-        case .leftLane: return "Làn trái"
-        case .rightLane: return "Làn phải"
+        case .currentLane: return "Same Lane"
+        case .leftLane: return "Left Lane"
+        case .rightLane: return "Right Lane"
         }
     }
 }
@@ -34,10 +34,10 @@ public enum VehicleType: String, Codable, CaseIterable {
 
     public var titleVi: String {
         switch self {
-        case .car: return "Ô tô con"
-        case .truck: return "Xe tải"
-        case .bus: return "Xe khách"
-        case .motorcycle: return "Xe máy"
+        case .car: return "Car"
+        case .truck: return "Truck"
+        case .bus: return "Bus"
+        case .motorcycle: return "Motorcycle"
         }
     }
 }

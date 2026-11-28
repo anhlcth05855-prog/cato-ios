@@ -28,14 +28,14 @@ public struct SettingsView: View {
                     .ignoresSafeArea()
 
                 Form {
-                    // PHẦN 1: THIẾT LẬP CAMERA GẮN KÍNH
-                    Section(header: Text("VỊ TRÍ CAMERA").foregroundColor(.gray)) {
+                    // SECTION 1: CAMERA MOUNT
+                    Section(header: Text("CAMERA POSITION").foregroundColor(.gray)) {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Chiều cao gắn camera")
+                                Text("Camera mount height")
                                     .foregroundColor(.white)
                                 Spacer()
-                                Text(String(format: "%.2f mét", distanceEstimator.cameraHeightMeters))
+                                Text(String(format: "%.2f m", distanceEstimator.cameraHeightMeters))
                                     .font(.system(.body, design: .monospaced))
                                     .foregroundColor(Color(red: 46/255, green: 204/255, blue: 113/255))
                             }
@@ -47,7 +47,7 @@ public struct SettingsView: View {
                             )
                             .accentColor(Color(red: 46/255, green: 204/255, blue: 113/255))
 
-                            Text("Xe sedan / hatchback ~1.25m; Crossover / SUV ~1.40m")
+                            Text("Sedan / hatchback ~1.25m; Crossover / SUV ~1.40m")
                                 .font(.system(size: 11))
                                 .foregroundColor(.gray)
                         }
@@ -55,30 +55,30 @@ public struct SettingsView: View {
                     }
                     .listRowBackground(Color(red: 20/255, green: 24/255, blue: 33/255))
 
-                    // PHẦN 2: NGƯỠNG CẢNH BÁO AN TOÀN (THÔNG TƯ 38/2024)
-                    Section(header: Text("CẢNH BÁO SỚM HƠN NGƯỠNG LUẬT").foregroundColor(.gray)) {
-                        Picker("Khoảng cách cộng thêm", selection: $thresholdManager.thresholdBufferMeters) {
-                            Text("+0 m (Đúng luật)").tag(Float(0.0))
-                            Text("+5 m (Khuyên dùng)").tag(Float(5.0))
-                            Text("+10 m (An toàn cao)").tag(Float(10.0))
+                    // SECTION 2: SAFETY THRESHOLD BUFFER
+                    Section(header: Text("EARLY WARNING BUFFER").foregroundColor(.gray)) {
+                        Picker("Extra buffer", selection: $thresholdManager.thresholdBufferMeters) {
+                            Text("+0 m (Standard)").tag(Float(0.0))
+                            Text("+5 m (Recommended)").tag(Float(5.0))
+                            Text("+10 m (High Safety)").tag(Float(10.0))
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .padding(.vertical, 4)
                     }
                     .listRowBackground(Color(red: 20/255, green: 24/255, blue: 33/255))
 
-                    // PHẦN 3: ÂM THANH CẢNH BÁO ADAS
-                    Section(header: Text("ÂM THANH CẢNH BÁO").foregroundColor(.gray)) {
-                        Toggle("Tắt chuông cảnh báo", isOn: $soundManager.isMuted)
+                    // SECTION 3: AUDIO ALERTS
+                    Section(header: Text("ALERT AUDIO").foregroundColor(.gray)) {
+                        Toggle("Mute alert chimes", isOn: $soundManager.isMuted)
                             .foregroundColor(.white)
 
-                        Toggle("Giọng nói cảnh báo Tiếng Việt", isOn: $voiceManager.isVoiceEnabled)
+                        Toggle("English Voice Alerts", isOn: $voiceManager.isVoiceEnabled)
                             .foregroundColor(.white)
 
                         if !soundManager.isMuted {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
-                                    Text("Âm lượng")
+                                    Text("Volume")
                                         .foregroundColor(.white)
                                     Spacer()
                                     Text("\(soundManager.volumePercent)%")
@@ -100,9 +100,9 @@ public struct SettingsView: View {
                     }
                     .listRowBackground(Color(red: 20/255, green: 24/255, blue: 33/255))
 
-                    // PHẦN 4: CHẾ ĐỘ MÔ PHỎNG / KIỂM THỬ (DEMO MODE)
-                    Section(header: Text("MÔ PHỎNG / KIỂM THỬ").foregroundColor(.gray)) {
-                        Toggle("Bật chế độ lái xe mô phỏng", isOn: Binding(
+                    // SECTION 4: DEMO / SIMULATION MODE
+                    Section(header: Text("SIMULATION / TEST").foregroundColor(.gray)) {
+                        Toggle("Enable Demo Driving Mode", isOn: Binding(
                             get: { locationManager.isDemoMode },
                             set: { locationManager.setDemoMode(enabled: $0) }
                         ))
@@ -111,7 +111,7 @@ public struct SettingsView: View {
                         if locationManager.isDemoMode {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
-                                    Text("Tốc độ xe mô phỏng")
+                                    Text("Simulated speed")
                                         .foregroundColor(.white)
                                     Spacer()
                                     Text("\(Int(locationManager.simulatedSpeedKmh)) km/h")
@@ -128,7 +128,7 @@ public struct SettingsView: View {
                                 )
                                 .accentColor(Color(red: 245/255, green: 197/255, blue: 24/255))
 
-                                Text("Hỗ trợ kiểm thử trọn vẹn các trạng thái cảnh báo ngay trong nhà / phòng làm việc.")
+                                Text("Allows testing all alert states indoors.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.gray)
                             }
@@ -137,11 +137,11 @@ public struct SettingsView: View {
                     }
                     .listRowBackground(Color(red: 20/255, green: 24/255, blue: 33/255))
 
-                    // PHẦN 5: THÔNG TIN & PHÁP LÝ
-                    Section(header: Text("THÔNG TIN").foregroundColor(.gray)) {
+                    // SECTION 5: INFO & LEGAL
+                    Section(header: Text("ABOUT").foregroundColor(.gray)) {
                         Button(action: { showingDisclaimer = true }) {
                             HStack {
-                                Text("Tuyên bố trách nhiệm pháp lý")
+                                Text("Legal Disclaimer")
                                     .foregroundColor(.white)
                                 Spacer()
                                 Image(systemName: "chevron.right")
@@ -151,15 +151,15 @@ public struct SettingsView: View {
                         }
 
                         HStack {
-                            Text("Quy chuẩn khoảng cách")
+                            Text("Distance Standard")
                                 .foregroundColor(.white)
                             Spacer()
-                            Text("Thông tư 38/2024")
+                            Text("Circular 38/2024")
                                 .foregroundColor(.gray)
                         }
 
                         HStack {
-                            Text("Bảo mật dữ liệu")
+                            Text("Data Privacy")
                                 .foregroundColor(.white)
                             Spacer()
                             Text("100% On-Device Offline")
@@ -167,7 +167,7 @@ public struct SettingsView: View {
                         }
 
                         HStack {
-                            Text("Phiên bản")
+                            Text("Version")
                                 .foregroundColor(.white)
                             Spacer()
                             Text("1.0.0 (Build 1)")
@@ -180,11 +180,11 @@ public struct SettingsView: View {
                     UITableView.appearance().backgroundColor = .clear
                 }
             }
-            .navigationTitle("Cài đặt")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Xong") {
+                    Button("Done") {
                         presentationMode.wrappedValue.dismiss()
                     }
                     .foregroundColor(Color(red: 46/255, green: 204/255, blue: 113/255))

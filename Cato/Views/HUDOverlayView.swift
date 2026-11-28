@@ -21,8 +21,8 @@ public struct HUDOverlayView: View {
 
     public enum ViewMode: String, CaseIterable {
         case camera = "Camera"
-        case schematic = "Sơ đồ"
-        case screenOff = "Tắt màn"
+        case schematic = "Radar"
+        case screenOff = "Screen Off"
     }
 
     public var body: some View {
@@ -181,7 +181,7 @@ public struct HUDOverlayView: View {
                             Circle()
                                 .fill(Color.green)
                                 .frame(width: 8, height: 8)
-                            Text("Đang quét làn đường...")
+                            Text("Scanning lane...")
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.white)
                         }

@@ -13,7 +13,7 @@ public struct DisclaimerView: View {
             VStack(spacing: 20) {
                 // Header
                 HStack {
-                    Text("Tuyên bố trách nhiệm")
+                    Text("Legal Disclaimer")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                     Spacer()
@@ -28,13 +28,13 @@ public struct DisclaimerView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        // Câu châm ngôn cốt lõi của Cato
+                        // Core Cato motto
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("QUAN TRỌNG")
+                            Text("IMPORTANT")
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundColor(Color(red: 245/255, green: 197/255, blue: 24/255))
 
-                            Text("“Đây là ước lượng, không phải thiết bị đo. Sai số tăng theo khoảng cách. Vạch xanh không phải giấy phép bám đuôi nhé.”")
+                            Text("“This is an estimate, not a measuring instrument. Margin of error increases with distance. A green line is not a license to tailgate.”")
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(.white)
                                 .italic()
@@ -47,24 +47,24 @@ public struct DisclaimerView: View {
                                 .stroke(Color(red: 245/255, green: 197/255, blue: 24/255).opacity(0.35), lineWidth: 1)
                         )
 
-                        // Các nguyên tắc an toàn
+                        // Safety principles
                         VStack(alignment: .leading, spacing: 12) {
                             DisclaimerItem(
                                 number: "01",
-                                title: "Cato là trợ lý hỗ trợ tầm nhìn",
-                                description: "Ứng dụng ước tính khoảng cách bằng camera đơn của điện thoại nhằm hỗ trợ tầm nhìn ngoại vi. Ứng dụng không thay thế giác quan và phán đoán trực tiếp của người điều khiển phương tiện."
+                                title: "Cato is a Vision Assistance Tool",
+                                description: "The app estimates distance using a single smartphone camera to assist peripheral awareness. It does not replace the driver's own senses and judgment."
                             )
 
                             DisclaimerItem(
                                 number: "02",
-                                title: "Thông tư 38/2024/TT-BGTVT",
-                                description: "Khoảng cách an toàn tối thiểu (35m, 55m, 70m, 100m) áp dụng trong điều kiện mặt đường khô ráo, thời tiết bình thường và tầm nhìn thông thoáng. Khi trời mưa, sương mù hoặc đường trơn trượt, người lái phải chủ động giữ khoảng cách xa hơn."
+                                title: "Circular 38/2024/TT-BGTVT",
+                                description: "Minimum safe distances (35m, 55m, 70m, 100m) apply on dry roads in normal weather and clear visibility. In rain, fog, or slippery conditions, keep a greater following distance."
                             )
 
                             DisclaimerItem(
                                 number: "03",
-                                title: "Quyền riêng tư tuyệt đối (100% Offline)",
-                                description: "Toàn bộ hình ảnh từ camera và tọa độ vị trí được xử lý trực tiếp trên thiết bị của bạn. Cato không lưu video, không gửi dữ liệu ra máy chủ và không thu thập thông tin cá nhân."
+                                title: "100% On-Device Privacy",
+                                description: "All camera frames and GPS coordinates are processed locally on your device. Cato never records video, uploads data, or collects personal information."
                             )
                         }
                     }
@@ -72,7 +72,7 @@ public struct DisclaimerView: View {
                 }
 
                 Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                    Text("Tôi đã hiểu và đồng ý")
+                    Text("I Understand & Agree")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
