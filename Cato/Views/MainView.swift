@@ -149,7 +149,7 @@ public struct MainView: View {
                 speedKmh: speed,
                 roadName: roadName
             )
-            self.speedLimitManager.update(location: location, isDemoMode: self.locationManager.isDemoMode)
+            self.speedLimitManager.update(location: location, speedKmh: speed, isDemoMode: self.locationManager.isDemoMode)
             self.voiceManager.evaluateOverspeed(
                 speedKmh: speed,
                 limitKmh: self.speedLimitManager.currentSpeedLimitKmh,

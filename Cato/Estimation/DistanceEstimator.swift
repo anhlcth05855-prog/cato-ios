@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import UIKit
 
 /// Ước lượng khoảng cách vật lý từ hình học camera và kích thước phương tiện chuẩn
 public class DistanceEstimator: ObservableObject {
@@ -10,7 +11,7 @@ public class DistanceEstimator: ObservableObject {
     /// Góc nghiêng pitch của camera (radian), dương khi chúc xuống mặt đường
     @Published public var pitchAngleRad: Float = 0.05
 
-    /// Tiêu cự ảo chuẩn hóa (tương đương góc nhìn ~60-70 độ của camera góc rộng tiêu chuẩn trên iPhone)
+    /// Tiêu cự ảo chuẩn hóa
     public var focalLengthNormalized: Float = 1.35
 
     /// Cache bộ lọc EMA theo ID phương tiện để làm mượt số đo, chống giật số
@@ -19,6 +20,19 @@ public class DistanceEstimator: ObservableObject {
     public init(cameraHeightMeters: Float = 1.25, pitchAngleRad: Float = 0.05) {
         self.cameraHeightMeters = cameraHeightMeters
         self.pitchAngleRad = pitchAngleRad
+    }
+
+    private var isLandscape: Bool {
+        let bounds = UIScreen.main.bounds
+        return bounds.width > bounds.height
+    }
+
+    private var focalLengthX: Float {
+        isLandscape ? 0.88 : 1.35
+    }
+
+    private var focalLengthY: Float {
+        isLandscape ? 1.35 : 0.78
     }
 
     /// Chuẩn kích thước chiều rộng trung bình (mét) theo loại phương tiện
@@ -33,27 +47,31 @@ public class DistanceEstimator: ObservableObject {
     }
 
     /// Ước lượng khoảng cách dựa trên điểm tiếp đất của bánh xe (Bottom of Bounding Box)
-    private func estimateGeometricDistance(box: CGRect) -> Float {
+    /// Trả về nil nếu đáy xe nằm trên đường chân trời hoặc góc nghiêng không hợp lệ
+    private func estimateGeometricDistance(box: CGRect) -> Float? {
         let yBottom = Float(box.maxY)
         let yCenter: Float = 0.5 // Tâm quang học chuẩn hóa
 
         // Góc phụ từ tâm quang học xuống đáy bounding box
-        let alpha = atan((yBottom - yCenter) / focalLengthNormalized)
+        let alpha = atan((yBottom - yCenter) / focalLengthY)
         let totalAngle = pitchAngleRad + alpha
 
-        if totalAngle <= 0.02 {
-            return 120.0 // Quá xa hoặc nằm trên đường chân trời
+        if totalAngle <= 0.03 {
+            return nil // Đáy xe nằm trên đường chân trời -> dùng 100% Pinhole Width
         }
 
         let dist = cameraHeightMeters / tan(totalAngle)
-        return min(max(dist, 1.5), 150.0)
+        if dist <= 0 || dist > 100.0 {
+            return nil
+        }
+        return min(max(dist, 1.5), 100.0)
     }
 
     /// Ước lượng khoảng cách dựa trên kích thước chiều rộng chiếu (Pinhole projection)
     private func estimateWidthDistance(box: CGRect, label: String) -> Float {
-        let boxWidthNorm = max(Float(box.width), 0.01)
+        let boxWidthNorm = max(Float(box.width), 0.015)
         let realWidth = getStandardVehicleWidth(label: label)
-        let dist = (realWidth * focalLengthNormalized) / boxWidthNorm
+        let dist = (realWidth * focalLengthX) / boxWidthNorm
         return min(max(dist, 1.5), 150.0)
     }
 
@@ -95,10 +113,15 @@ public class DistanceEstimator: ObservableObject {
             if v.distanceMeters > 0 && [888, 777, 999].contains(v.id) {
                 rawDist = v.distanceMeters
             } else {
-                let dGeom = estimateGeometricDistance(box: v.boundingBox)
                 let dWidth = estimateWidthDistance(box: v.boundingBox, label: v.label)
-                let weightGeom: Float = (dGeom < 40.0) ? 0.65 : 0.40
-                rawDist = dGeom * weightGeom + dWidth * (1.0 - weightGeom)
+                if let dGeom = estimateGeometricDistance(box: v.boundingBox),
+                   !(dWidth < 25.0 && dGeom > dWidth * 2.2) {
+                    let weightGeom: Float = (dGeom < 35.0) ? 0.55 : 0.35
+                    rawDist = dGeom * weightGeom + dWidth * (1.0 - weightGeom)
+                } else {
+                    // Đáy xe nằm trên đường chân trời hoặc sai lệch lớn -> dùng 100% Pinhole Width
+                    rawDist = dWidth
+                }
             }
 
             // 3. Làm mượt bằng Exponential Moving Average (EMA) để chống giật số

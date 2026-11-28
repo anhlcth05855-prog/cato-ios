@@ -185,19 +185,22 @@ public class RoadSpeedLimitManager: ObservableObject {
 
     public init() {}
 
-    public func update(location: CLLocation, isDemoMode: Bool) {
+    public func update(location: CLLocation, speedKmh: Float, isDemoMode: Bool) {
         if isDemoMode {
             currentSpeedLimitKmh = 120
             nearbySpeedCameraDistanceMeters = nil
             return
         }
 
+        // Chỉ kích hoạt biển báo cao tốc khi đang chạy trên 50 km/h để tránh báo nhầm 120 km/h trong phố
         var matchedLimit: Int? = nil
-        for zone in zones {
-            let zoneLoc = CLLocation(latitude: zone.lat, longitude: zone.lng)
-            if location.distance(from: zoneLoc) <= zone.radiusMeters {
-                matchedLimit = zone.limitKmh
-                break
+        if speedKmh > 50 {
+            for zone in zones {
+                let zoneLoc = CLLocation(latitude: zone.lat, longitude: zone.lng)
+                if location.distance(from: zoneLoc) <= zone.radiusMeters {
+                    matchedLimit = zone.limitKmh
+                    break
+                }
             }
         }
 
